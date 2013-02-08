@@ -78,6 +78,21 @@ class VisualVideo
         return base64_encode($hmac);
     }
     
+
+    /// Encode a URL, following the specs of OAuth signing
+    
+    /// @param string String to sign.
+    private function _urlencode($string)
+    {
+        $signedString = urlencode($string);
+        $signedString = str_replace('%2d', '-', $signedString);
+        $signedString = str_replace('%5f', '_', $signedString);
+        $signedString = str_replace('%2e', '.', $signedString);
+        $signedString = str_replace('%7e', '~', $signedString);
+        $signedString = str_replace('+', '%20', $signedString);
+        return($signedString);
+    }
+
     
     /// Sign a request.
     
@@ -111,10 +126,10 @@ class VisualVideo
         $concatenatedParameters = "";
         
         foreach ($parameters as $k => $v)
-            $concatenatedParameters .= ($concatenatedParameters == '' ? '' : '&') . urlencode($k) . '=' . urlencode($v);
+            $concatenatedParameters .= ($concatenatedParameters == '' ? '' : '&') . $this->_urlencode($k) . '=' . $this->_urlencode($v);
         
         // Sign the signature base string.
-        $signatureBaseString = $method . "&" . urlencode($this->_host . $endpoint) . "&" . urlencode($concatenatedParameters);
+        $signatureBaseString = $method . "&" . $this->_urlencode($this->_host . $endpoint) . "&" . $this->_urlencode($concatenatedParameters);
         $signatureKey = $this->_consumerSecret . "&" . $this->_accessTokenSecret;
         $signature = $this->_hmacSha1($signatureBaseString, 
                                       $signatureKey);
@@ -122,10 +137,10 @@ class VisualVideo
         curl_setopt($request,
                     CURLOPT_HTTPHEADER,
                     array('Authorization: OAuth realm="http://' . $this->_host . '", ' . 
-                          'oauth_consumer_key="' . urlencode($this->_consumerKey) . '", ' .
-                          'oauth_token="' . urlencode($this->_accessToken) . '", ' . 
+                          'oauth_consumer_key="' . $this->_urlencode($this->_consumerKey) . '", ' .
+                          'oauth_token="' . $this->_urlencode($this->_accessToken) . '", ' . 
                           'oauth_signature_method="HMAC-SHA1", ' . 
-                          'oauth_signature="' . urlencode($signature) . '", ' . 
+                          'oauth_signature="' . $this->_urlencode($signature) . '", ' . 
                           'oauth_timestamp="' . $timestamp . '", ' .
                           'oauth_nonce="' . $nonce . '", ' .
                           'oauth_version="1.0"'
@@ -146,7 +161,7 @@ class VisualVideo
         $first = true;
         foreach ($parameters as $k => $v)
         {
-            $url .= ($first ? '?' : '&') . urlencode($k) . '=' . urlencode($v);
+            $url .= ($first ? '?' : '&') . $this->_urlencode($k) . '=' . $this->_urlencode($v);
             $first = false;
         }
         
@@ -176,7 +191,7 @@ class VisualVideo
         
         $data = '';
         foreach ($parameters as $k => $v)
-            $data .= ($data == '' ? '' : '&') . urlencode($k) . '=' . urlencode($v);
+            $data .= ($data == '' ? '' : '&') . $this->_urlencode($k) . '=' . $this->_urlencode($v);
         
         // Set up the request, sign it and run with it.
         $request = curl_init($url);
